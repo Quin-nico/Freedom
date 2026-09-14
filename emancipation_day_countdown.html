@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emancipation Day Countdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cinzel', serif;
+            font-variant-numeric: tabular-nums;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling if content fits */
+        }
+
+        .glitch-wrapper {
+            position: relative;
+        }
+
+        .glitch {
+            position: relative;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .countdown-container {
+             background: rgba(255, 255, 255, 0.05);
+             border: 1px solid rgba(255, 255, 255, 0.1);
+             backdrop-filter: blur(10px);
+             border-radius: 1rem;
+        }
+
+        @keyframes popUpdate {
+            0% { opacity: 0.3; transform: translateY(-8px) scale(0.9); }
+            60% { opacity: 1; transform: translateY(2px) scale(1.05); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .animating {
+            animation: popUpdate 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: inline-block; /* Required for transforms to apply to spans */
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-white selection:text-black">
+    
+    <!-- Live Clock in Top Right -->
+    <div class="absolute top-4 right-6 text-sm opacity-60 tracking-wider">
+        <span id="live-clock">00:00:00</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <main class="text-center px-4 z-10 w-full max-w-4xl mx-auto flex flex-col items-center justify-center">
+        
+        <!-- Heading -->
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-widest text-white mb-2 uppercase glitch-wrapper">
+                <span class="glitch" data-text="Day Of Emancipation">Day Of Emancipation</span>
+            </h1>
+            <div class="w-full h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-30 mt-6"></div>
+        </div>
+
+        <!-- Countdown Display -->
+        <div class="countdown-container p-8 md:p-12 shadow-2xl w-full max-w-2xl">
+            <h2 class="text-xl md:text-2xl mb-8 uppercase tracking-widest text-gray-400">Countdown</h2>
+            
+            <div class="flex justify-center items-baseline gap-2 md:gap-6">
+                <!-- Days Section -->
+                <div class="flex flex-col items-center w-24 md:w-32">
+                    <span id="days" class="text-5xl md:text-7xl font-bold">--</span>
+                    <span class="text-xs md:text-sm mt-2 text-gray-500 uppercase tracking-widest">Days Left</span>
+                </div>
+                
+                <!-- Separator -->
+                <span class="text-3xl md:text-5xl opacity-30 pb-6">:</span>
+
+                <!-- Hours Section -->
+                <div class="flex flex-col items-center w-20 md:w-28">
+                    <span id="hours" class="text-3xl md:text-5xl font-bold text-gray-300">--</span>
+                    <span class="text-xs mt-2 text-gray-500 uppercase tracking-widest">Hours</span>
+                </div>
+                
+                <!-- Separator -->
+                <span class="text-3xl md:text-5xl opacity-30 pb-6">:</span>
+
+                <!-- Minutes Section -->
+                <div class="flex flex-col items-center w-20 md:w-28 hidden sm:flex">
+                    <span id="minutes" class="text-3xl md:text-5xl font-bold text-gray-400">--</span>
+                    <span class="text-xs mt-2 text-gray-500 uppercase tracking-widest">Mins</span>
+                </div>
+
+                <!-- Separator -->
+                <span class="text-3xl md:text-5xl opacity-30 pb-6 hidden sm:inline-block">:</span>
+
+                <!-- Seconds Section -->
+                <div class="flex flex-col items-center w-20 md:w-28 hidden sm:flex">
+                    <span id="seconds" class="text-3xl md:text-5xl font-bold text-gray-500">--</span>
+                    <span class="text-xs mt-2 text-gray-600 uppercase tracking-widest">Secs</span>
+                </div>
+            </div>
+             <!-- Mobile Minutes/Seconds fallback -->
+             <div class="mt-6 flex justify-center gap-4 sm:hidden text-gray-400">
+                <span id="mobile-minutes" class="text-xl font-bold">--</span> <span class="text-xs self-center">MIN</span>
+                 <span class="opacity-30">|</span>
+                <span id="mobile-seconds" class="text-xl font-bold">--</span> <span class="text-xs self-center">SEC</span>
+            </div>
+            
+            <div class="mt-12 text-sm text-gray-500 tracking-widest uppercase">
+                Target Date: July 14, 2029
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Subtle Background Element -->
+    <div class="fixed inset-0 pointer-events-none z-0 flex items-center justify-center opacity-10">
+        <div class="w-[800px] h-[800px] bg-white rounded-full blur-[150px]"></div>
+    </div>
+
+    <script>
+        // Target Date: July 14, 2029
+        const targetDate = new Date('July 14, 2029 00:00:00').getTime();
+
+        // Elements
+        const clockEl = document.getElementById('live-clock');
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        const secondsEl = document.getElementById('seconds');
+        const mobileMinutesEl = document.getElementById('mobile-minutes');
+        const mobileSecondsEl = document.getElementById('mobile-seconds');
+
+        // State tracker for animations
+        const prevValues = {};
+
+        function animateUpdate(element, newValue, key) {
+            if (!element) return;
+            
+            // Only trigger if the value has actually changed
+            if (prevValues[key] !== newValue) {
+                element.textContent = newValue;
+                
+                // Remove class, force a reflow, and add class back to restart the CSS animation
+                element.classList.remove('animating');
+                void element.offsetWidth; 
+                element.classList.add('animating');
+                
+                prevValues[key] = newValue;
+            }
+        }
+
+        function updateTime() {
+            const now = new Date();
+            
+            // --- Update Live Clock ---
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            animateUpdate(clockEl, `${hours}:${minutes}:${seconds}`, 'clock');
+
+            // --- Update Countdown ---
+            const nowTime = now.getTime();
+            const distance = targetDate - nowTime;
+
+            if (distance < 0) {
+                // If the date has passed
+                animateUpdate(daysEl, "0", 'days');
+                animateUpdate(hoursEl, "00", 'hours');
+                animateUpdate(minutesEl, "00", 'minutes');
+                animateUpdate(secondsEl, "00", 'seconds');
+                if(mobileMinutesEl) animateUpdate(mobileMinutesEl, "00", 'mobileMins');
+                if(mobileSecondsEl) animateUpdate(mobileSecondsEl, "00", 'mobileSecs');
+                return;
+            }
+
+            // Time calculations for days, hours, minutes and seconds
+            const daysLeft = String(Math.floor(distance / (1000 * 60 * 60 * 24)));
+            const hoursLeft = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+            const minutesLeft = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+            const secondsLeft = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+
+            // Display results with animations
+            animateUpdate(daysEl, daysLeft, 'days');
+            animateUpdate(hoursEl, hoursLeft, 'hours');
+            animateUpdate(minutesEl, minutesLeft, 'minutes');
+            animateUpdate(secondsEl, secondsLeft, 'seconds');
+            
+            // Mobile specific updates
+            if(mobileMinutesEl) animateUpdate(mobileMinutesEl, minutesLeft, 'mobileMins');
+            if(mobileSecondsEl) animateUpdate(mobileSecondsEl, secondsLeft, 'mobileSecs');
+        }
+
+        // Run immediately, then every second
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
